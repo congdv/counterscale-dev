@@ -46,6 +46,8 @@ import { SearchFilters } from "~/lib/types";
 import SearchFilterBadges from "~/components/SearchFilterBadges";
 import { TimeSeriesCard } from "./resources.timeseries";
 import { StatsCard } from "./resources.stats";
+import { TotalUsersCard } from "./resources.total-users";
+import { ActiveUsersCard } from "./resources.active-users";
 import { requireAuth } from "~/lib/auth";
 
 export const meta: MetaFunction = () => {
@@ -237,6 +239,15 @@ export default function Dashboard() {
             <div className="transition" style={{ opacity: loading ? 0.6 : 1 }}>
                 <div className="w-full mb-4">
                     <StatsCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <TotalUsersCard siteId={data.siteId} />
+                    <ActiveUsersCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}

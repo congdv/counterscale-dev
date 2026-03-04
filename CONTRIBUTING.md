@@ -55,3 +55,18 @@ To achieve that:
 - We prioritize backwards compatibility
     - New `localMetricDataset` columns can be added, but old columns cannot be removed or renamed (they can however, be "forgotten").
     - That also means it's okay if a feature only works during a period where the data is active.
+
+
+
+
+
+congdao@Congs-MacBook-Air counterscale-dev % curl -X POST http://localhost:8787/api/event \
+  -H "Authorization: Bearer test-api-key-change-in-production" \
+  -H "Content-Type: application/json" \
+  -d '{                                                                               
+    "siteId": "mysite",
+    "userId": "system",  
+    "eventName": "total_user",
+    "prop1": "300"     
+  }'
+{"ok":true}%   

@@ -1058,5 +1058,98 @@ export class AnalyticsEngineAPI {
      */
     // DEPRECATED: Retention functionality has been removed.
     // Event tracking (getTopEvents) is still available.
+
+    async getActiveUsers(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        filters: SearchFilters = {},
+    ): Promise<number> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+        const filterStr = filtersToSql(filters);
+
+        const query = `
+            SELECT COUNT(DISTINCT ${ColumnMappings.userId}) as activeUsers
+            FROM localMetricDataset
+            WHERE timestamp >= ${startIntervalSql}
+                AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.userId} != ''
+                AND ${ColumnMappings.userId} != 'system'
+                ${filterStr}`;
+
+        type SelectionSet = {
+            activeUsers: number;
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<number>((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                if (responseData.data.length === 0) {
+                    resolve(0);
+                    return;
+                }
+
+                resolve(Number(responseData.data[0].activeUsers));
+            })(),
+        );
+        return returnPromise;
+    }
+
+    async getLatestEventPropValue(
+        siteId: string,
+        eventName: string,
+    ): Promise<string | null> {
+        // argMax returns the value of customProp1 at the row with the maximum timestamp,
+        // which is equivalent to ORDER BY timestamp DESC LIMIT 1 without needing a sort.
+        const query = `
+            SELECT argMax(${ColumnMappings.customProp1}, timestamp) as value
+            FROM localMetricDataset
+            WHERE ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.eventName} = '${eventName}'`;
+
+        type SelectionSet = {
+            value: string;
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<string | null>((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                if (
+                    responseData.data.length === 0 ||
+                    !responseData.data[0].value
+                ) {
+                    resolve(null);
+                    return;
+                }
+
+                resolve(responseData.data[0].value ?? null);
+            })(),
+        );
+        return returnPromise;
+    }
 }
 
