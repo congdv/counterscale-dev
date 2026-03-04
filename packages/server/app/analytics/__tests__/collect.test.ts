@@ -134,6 +134,11 @@ describe("collectRequestHandler", () => {
                 "summer_sale", // utm_campaign
                 "running_shoes", // utm_term
                 "ad1", // utm_content
+                "", // userId (empty for pageview)
+                "", // eventName (empty for pageview)
+                "", // customProp1 (empty for pageview)
+                "", // customProp2 (empty for pageview)
+                "", // customProp3 (empty for pageview)
             ],
             doubles: [
                 1, // new visitor
@@ -426,4 +431,32 @@ describe("collectRequestHandler", () => {
         expect(blobs[13]).toBe(""); // utm_term (empty)
         expect(blobs[14]).toBe(""); // utm_content (empty)
     });
+
+    test("pageviews have empty event fields (blobs 16-20)", () => {
+        const env = {
+            WEB_COUNTER_AE: {
+                writeDataPoint: vi.fn(),
+            } as AnalyticsEngineDataset,
+        } as Env;
+
+        const request = generateRequestParams({
+            "user-agent":
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
+        });
+
+        collectRequestHandler(request as any, env, {
+            country: "US",
+        });
+
+        const writeDataPoint = env.WEB_COUNTER_AE.writeDataPoint;
+        expect(env.WEB_COUNTER_AE.writeDataPoint).toHaveBeenCalled();
+
+        const blobs = (writeDataPoint as Mock).mock.calls[0][0].blobs;
+        expect(blobs[15]).toBe(""); // userId (empty for pageview)
+        expect(blobs[16]).toBe(""); // eventName (empty for pageview)
+        expect(blobs[17]).toBe(""); // customProp1 (empty for pageview)
+        expect(blobs[18]).toBe(""); // customProp2 (empty for pageview)
+        expect(blobs[19]).toBe(""); // customProp3 (empty for pageview)
+    });
 });
+

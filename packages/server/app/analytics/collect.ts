@@ -258,6 +258,11 @@ interface DataPoint {
     utmCampaign?: string;
     utmTerm?: string;
     utmContent?: string;
+    userId?: string;
+    eventName?: string;
+    customProp1?: string;
+    customProp2?: string;
+    customProp3?: string;
 
     // doubles
     newVisitor: number;
@@ -290,6 +295,11 @@ export function writeDataPoint(
             data.utmCampaign || "", // blob13
             data.utmTerm || "", // blob14
             data.utmContent || "", // blob15
+            data.userId || "", // blob16 - backend event user ID
+            data.eventName || "", // blob17 - backend event name
+            data.customProp1 || "", // blob18 - custom property 1
+            data.customProp2 || "", // blob19 - custom property 2
+            data.customProp3 || "", // blob20 - custom property 3
         ],
         doubles: [data.newVisitor || 0, data.newSession || 0, data.bounce],
     };

@@ -246,7 +246,7 @@ export class AnalyticsEngineAPI {
 
             /* output as UTC */
             toDateTime(_bucket, 'Etc/UTC') as bucket
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= toDateTime('${localStartTime.format("YYYY-MM-DD HH:mm:ss")}')
 								AND timestamp < toDateTime('${localEndTime.format("YYYY-MM-DD HH:mm:ss")}')
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -352,7 +352,7 @@ export class AnalyticsEngineAPI {
             SELECT SUM(_sample_interval) as count,
                 ${ColumnMappings.newVisitor} as isVisitor,
                 ${ColumnMappings.bounce} as isBounce
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 ${filterStr}
             AND ${siteIdColumn} = '${siteId}'
@@ -416,7 +416,7 @@ export class AnalyticsEngineAPI {
         const _column = ColumnMappings[column];
         const query = `
             SELECT ${_column}, SUM(_sample_interval) as count
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 1
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -492,7 +492,7 @@ export class AnalyticsEngineAPI {
                 ${ColumnMappings.newVisitor} as isVisitor, 
                 ${ColumnMappings.bounce} as isBounce,
                 ${columnsStrWithAliases}
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= toDateTime('${startDateTimeSql}') AND timestamp < toDateTime('${endDateTimeSql}')
             GROUP BY timestamp,
                 ${ColumnMappings.siteId}, 
@@ -584,7 +584,7 @@ export class AnalyticsEngineAPI {
             SELECT ${_column},
                 ${ColumnMappings.newVisitor} as isVisitor,
                 SUM(_sample_interval) as count
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 0
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -889,7 +889,7 @@ export class AnalyticsEngineAPI {
         const query = `
             SELECT SUM(_sample_interval) as count,
                 ${ColumnMappings.siteId} as siteId
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
             GROUP BY siteId
             ORDER BY count DESC
@@ -936,7 +936,7 @@ export class AnalyticsEngineAPI {
             SELECT
                 MIN(timestamp) as earliestEvent,
                 ${ColumnMappings.bounce} as isBounce
-            FROM metricsDataset
+            FROM localMetricDataset
             WHERE ${ColumnMappings.siteId} = '${siteId}'
             GROUP by isBounce
         `;
@@ -984,4 +984,79 @@ export class AnalyticsEngineAPI {
 
         return returnPromise;
     }
+
+    /**
+     * Get top events for a site in a given interval
+     * Returns array of [eventName, count, uniqueUsers]
+     */
+    async getTopEvents(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        limit: number = 20,
+    ): Promise<[eventName: string, count: number, users: number][]> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+
+        const query = `
+            SELECT ${ColumnMappings.eventName} as eventName,
+                   SUM(_sample_interval) as count,
+                   COUNT(DISTINCT ${ColumnMappings.userId}) as uniqueUsers
+            FROM localMetricDataset
+            WHERE timestamp >= ${startIntervalSql}
+                AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.eventName} != ''
+            GROUP BY eventName
+            ORDER BY count DESC
+            LIMIT ${limit}`;
+
+        type SelectionSet = {
+            eventName: string;
+            count: number;
+            uniqueUsers: number;
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<
+            [eventName: string, count: number, users: number][]
+        >((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                resolve(
+                    responseData.data.map((row) => [
+                        row.eventName,
+                        Number(row.count),
+                        Number(row.uniqueUsers),
+                    ]),
+                );
+            })(),
+        );
+        return returnPromise;
+    }
+
+    /**
+     * Get retention for multiple cohorts using a SINGLE SQL query.
+     *
+     * Fetches all (userId, activityDay) pairs in the full window (cohort window
+     * + 30 days forward) in one request, then computes cohort assignments and
+     * Day-1 / Day-7 / Day-14 / Day-30 retention percentages entirely in JS.
+     *
+     * This collapses what would otherwise be numDays×5 individual CF AE HTTP
+     * requests into a single query, avoiding rate-limit errors.
+     */
+    // DEPRECATED: Retention functionality has been removed.
+    // Event tracking (getTopEvents) is still available.
 }
+

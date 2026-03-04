@@ -21,7 +21,7 @@
     "scripts": {
         "dev": "react-router dev",
         "build": "react-router build",
-        "preview": "wrangler dev --var VERSION:`git rev-parse HEAD`",
+        "preview": "wrangler dev --remote --var VERSION:`git rev-parse HEAD`",
         "deploy": "wrangler deploy --var VERSION:`git rev-parse HEAD`",
         "lint": "eslint .",
         "test": "TZ=EST vitest run",

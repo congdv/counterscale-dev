@@ -682,3 +682,62 @@ describe("intervalToSql", () => {
         });
     });
 });
+
+describe("Event Tracking Queries", () => {
+    const api = new AnalyticsEngineAPI(
+        "test_account_id_abc123",
+        "test_api_token_def456",
+    );
+    let fetch: Mock;
+
+    beforeEach(() => {
+        fetch = global.fetch = vi.fn();
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2024-05-01T12:00:00Z").getTime());
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    describe("getTopEvents", () => {
+        test("returns top events sorted by count", async () => {
+            const mockEvents = [
+                { eventName: "purchase", count: 100, uniqueUsers: 50 },
+                { eventName: "signup", count: 75, uniqueUsers: 75 },
+                { eventName: "login", count: 50, uniqueUsers: 30 },
+            ];
+
+            fetch.mockResolvedValue(
+                createFetchResponse({
+                    data: mockEvents,
+                    rows: 3,
+                    rows_before_limit_at_least: 3,
+                }),
+            );
+
+            const result = await api.getTopEvents("test-site", "7d", "UTC");
+
+            expect(result).toEqual([
+                ["purchase", 100, 50],
+                ["signup", 75, 75],
+                ["login", 50, 30],
+            ]);
+        });
+
+        test("handles empty result", async () => {
+            fetch.mockResolvedValue(
+                createFetchResponse({
+                    data: [],
+                    rows: 0,
+                    rows_before_limit_at_least: 0,
+                }),
+            );
+
+            const result = await api.getTopEvents("test-site", "7d", "UTC");
+
+            expect(result).toEqual([]);
+        });
+    });
+});

@@ -53,5 +53,5 @@ To achieve that:
     - That means no `users` table, no `sites` table, etc.
     - This also means retention will be limited by what CF Analytics Engine provides. While it could be possible to stand up a "hit counter" for long-lived data (e.g. years), that would mean another database, which we will not pursue.
 - We prioritize backwards compatibility
-    - New `metricsDataset` columns can be added, but old columns cannot be removed or renamed (they can however, be "forgotten").
+    - New `localMetricDataset` columns can be added, but old columns cannot be removed or renamed (they can however, be "forgotten").
     - That also means it's okay if a feature only works during a period where the data is active.

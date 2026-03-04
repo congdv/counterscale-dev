@@ -6,3 +6,6 @@ CF_PASSWORD_HASH=''
 CF_JWT_SECRET=''
 CF_AUTH_ENABLED=''
 CF_STORAGE_ENABLED=''
+
+# API key for backend event collection (POST /api/event)
+COLLECTOR_API_KEY=''

@@ -3,8 +3,8 @@ export type ColumnMappingToType<
 > = T extends `blob${number}`
     ? string
     : T extends `double${number}`
-      ? number
-      : never;
+    ? number
+    : never;
 
 /**
  * This maps logical column names to the actual column names in the data store.
@@ -29,6 +29,15 @@ export const ColumnMappings = {
     utmCampaign: "blob13",
     utmTerm: "blob14",
     utmContent: "blob15",
+
+    /**
+     * Server-side event tracking
+     */
+    userId: "blob16",
+    eventName: "blob17",
+    customProp1: "blob18",
+    customProp2: "blob19",
+    customProp3: "blob20",
 
     /**
      * doubles
