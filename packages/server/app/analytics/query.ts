@@ -246,7 +246,7 @@ export class AnalyticsEngineAPI {
 
             /* output as UTC */
             toDateTime(_bucket, 'Etc/UTC') as bucket
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= toDateTime('${localStartTime.format("YYYY-MM-DD HH:mm:ss")}')
 								AND timestamp < toDateTime('${localEndTime.format("YYYY-MM-DD HH:mm:ss")}')
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -352,7 +352,7 @@ export class AnalyticsEngineAPI {
             SELECT SUM(_sample_interval) as count,
                 ${ColumnMappings.newVisitor} as isVisitor,
                 ${ColumnMappings.bounce} as isBounce
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 ${filterStr}
             AND ${siteIdColumn} = '${siteId}'
@@ -416,7 +416,7 @@ export class AnalyticsEngineAPI {
         const _column = ColumnMappings[column];
         const query = `
             SELECT ${_column}, SUM(_sample_interval) as count
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 1
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -492,7 +492,7 @@ export class AnalyticsEngineAPI {
                 ${ColumnMappings.newVisitor} as isVisitor, 
                 ${ColumnMappings.bounce} as isBounce,
                 ${columnsStrWithAliases}
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= toDateTime('${startDateTimeSql}') AND timestamp < toDateTime('${endDateTimeSql}')
             GROUP BY timestamp,
                 ${ColumnMappings.siteId}, 
@@ -584,7 +584,7 @@ export class AnalyticsEngineAPI {
             SELECT ${_column},
                 ${ColumnMappings.newVisitor} as isVisitor,
                 SUM(_sample_interval) as count
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.newVisitor} = 0
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -889,7 +889,7 @@ export class AnalyticsEngineAPI {
         const query = `
             SELECT SUM(_sample_interval) as count,
                 ${ColumnMappings.siteId} as siteId
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql} AND timestamp < ${endIntervalSql}
             GROUP BY siteId
             ORDER BY count DESC
@@ -936,7 +936,7 @@ export class AnalyticsEngineAPI {
             SELECT
                 MIN(timestamp) as earliestEvent,
                 ${ColumnMappings.bounce} as isBounce
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE ${ColumnMappings.siteId} = '${siteId}'
             GROUP by isBounce
         `;
@@ -1004,7 +1004,7 @@ export class AnalyticsEngineAPI {
             SELECT ${ColumnMappings.eventName} as eventName,
                    SUM(_sample_interval) as count,
                    COUNT(DISTINCT ${ColumnMappings.userId}) as uniqueUsers
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql}
                 AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -1073,7 +1073,7 @@ export class AnalyticsEngineAPI {
 
         const query = `
             SELECT COUNT(DISTINCT ${ColumnMappings.userId}) as activeUsers
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE timestamp >= ${startIntervalSql}
                 AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.siteId} = '${siteId}'
@@ -1117,7 +1117,7 @@ export class AnalyticsEngineAPI {
         // which is equivalent to ORDER BY timestamp DESC LIMIT 1 without needing a sort.
         const query = `
             SELECT argMax(${ColumnMappings.customProp1}, timestamp) as value
-            FROM localMetricDataset
+            FROM metricDataset
             WHERE ${ColumnMappings.siteId} = '${siteId}'
                 AND ${ColumnMappings.eventName} = '${eventName}'`;
 

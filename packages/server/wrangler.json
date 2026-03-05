@@ -12,7 +12,7 @@
     "analytics_engine_datasets": [
         {
             "binding": "WEB_COUNTER_AE",
-            "dataset": "localMetricDataset"
+            "dataset": "metricDataset"
         }
     ],
     "triggers": {
