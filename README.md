@@ -299,3 +299,10 @@ Right now there is no local "test" database. This means in local development:
 ### Sampling
 
 Cloudflare Analytics Engine uses sampling to make high volume data ingestion/querying affordable at scale (this is similar to most other analytics tools, see [Google Analytics on Sampling](https://support.google.com/analytics/answer/2637192?hl=en#zippy=%2Cin-this-article)). You can find out more how [sampling works with CF AE here](https://developers.cloudflare.com/analytics/analytics-engine/sampling/).
+
+### To deploy from local code
+
+```
+npx wrangler login
+pnpm turbo run deploy
+```
