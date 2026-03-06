@@ -1009,6 +1009,7 @@ export class AnalyticsEngineAPI {
                 AND timestamp < ${endIntervalSql}
                 AND ${ColumnMappings.siteId} = '${siteId}'
                 AND ${ColumnMappings.eventName} != ''
+                AND ${ColumnMappings.eventName} != 'total_user'
             GROUP BY eventName
             ORDER BY count DESC
             LIMIT ${limit}`;
