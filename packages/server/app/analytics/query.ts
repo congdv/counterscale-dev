@@ -1048,6 +1048,68 @@ export class AnalyticsEngineAPI {
     }
 
     /**
+     * Get top customProp1 values for events in a given interval
+     * Returns array of [propValue, count, uniqueUsers]
+     */
+    async getCountByCustomProp1(
+        siteId: string,
+        interval: string,
+        tz?: string,
+        limit: number = 20,
+    ): Promise<[propValue: string, count: number, users: number][]> {
+        const { startIntervalSql, endIntervalSql } = intervalToSql(
+            interval,
+            tz,
+        );
+
+        const query = `
+            SELECT ${ColumnMappings.customProp1} as propValue,
+                   SUM(_sample_interval) as count,
+                   COUNT(DISTINCT ${ColumnMappings.userId}) as uniqueUsers
+            FROM metricsDataset
+            WHERE timestamp >= ${startIntervalSql}
+                AND timestamp < ${endIntervalSql}
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.eventName} != ''
+                AND ${ColumnMappings.customProp1} != ''
+            GROUP BY propValue
+            ORDER BY count DESC
+            LIMIT ${limit}`;
+
+        type SelectionSet = {
+            propValue: string;
+            count: number;
+            uniqueUsers: number;
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<
+            [propValue: string, count: number, users: number][]
+        >((resolve, reject) =>
+            (async () => {
+                const response = await queryResult;
+
+                if (!response.ok) {
+                    reject(response.statusText);
+                    return;
+                }
+
+                const responseData =
+                    (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                resolve(
+                    responseData.data.map((row) => [
+                        row.propValue,
+                        Number(row.count),
+                        Number(row.uniqueUsers),
+                    ]),
+                );
+            })()
+        );
+        return returnPromise;
+    }
+
+    /**
      * Get retention for multiple cohorts using a SINGLE SQL query.
      *
      * Fetches all (userId, activityDay) pairs in the full window (cohort window

@@ -37,6 +37,7 @@ import { UtmCampaignCard } from "./resources.utm-campaign";
 import { UtmTermCard } from "./resources.utm-term";
 import { UtmContentCard } from "./resources.utm-content";
 import { EventsCard } from "./resources.events";
+import { EventPropsCard } from "./resources.event-props";
 
 import {
     getFiltersFromSearchParams,
@@ -265,6 +266,12 @@ export default function Dashboard() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <EventsCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
+                        timezone={userTimezone}
+                    />
+                    <EventPropsCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
