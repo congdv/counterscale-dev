@@ -11,6 +11,8 @@ declare namespace Cloudflare {
         CF_TRACKER_SCRIPT_NAME: string;
         CF_STORAGE_ENABLED: string;
         COLLECTOR_API_KEY: string;
+        SYNC_ANALYTICS_URL: string;
+        SYNC_ANALYTICS_TOKEN: string;
         DAILY_ROLLUPS: R2Bucket;
         WEB_COUNTER_AE: AnalyticsEngineDataset;
         ASSETS: Fetcher;

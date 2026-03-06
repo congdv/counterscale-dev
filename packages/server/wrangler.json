@@ -19,5 +19,8 @@
         "crons": [
             "0 2 * * *"
         ]
+    },
+    "vars": {
+        "SYNC_ANALYTICS_URL": "https://www.simplepaystub.com/api/sync-analytics"
     }
 }

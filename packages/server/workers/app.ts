@@ -1,4 +1,4 @@
-import type { 
+import type {
     ExecutionContext,
     ExportedHandler,
     ScheduledController,
@@ -17,11 +17,24 @@ import { extractAsArrow } from "./lib/arrow";
 const requestHandler = createRequestHandler(build as unknown as ServerBuild);
 
 export default {
-        async scheduled(
+    async scheduled(
         _controller: ScheduledController,
         env: Env,
         ctx: ExecutionContext,
     ) {
+        if (env.SYNC_ANALYTICS_URL && env.SYNC_ANALYTICS_TOKEN) {
+            ctx.waitUntil(
+                fetch(env.SYNC_ANALYTICS_URL, {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${env.SYNC_ANALYTICS_TOKEN}`,
+                    },
+                }).catch((error) => {
+                    console.error("sync-analytics error:", error);
+                }),
+            );
+        }
+
         if (env.CF_STORAGE_ENABLED === "false") return
         try {
             ctx.waitUntil(
@@ -36,6 +49,8 @@ export default {
         } catch (error) {
             console.error(error);
         }
+
+
     },
     // @ts-expect-error TODO figure out types here
     async fetch(request: any, env: any, ctx: any) {
