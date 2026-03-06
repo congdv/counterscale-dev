@@ -258,17 +258,17 @@ export default function Dashboard() {
                     />
                 </div>
                 <div className="w-full mb-4">
-                    <TotalUsersTimeSeriesCard
-                        siteId={data.siteId}
-                        interval={data.interval}
-                        timezone={userTimezone}
-                    />
-                </div>
-                <div className="w-full mb-4">
                     <TimeSeriesCard
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="w-full mb-4">
+                    <TotalUsersTimeSeriesCard
+                        siteId={data.siteId}
+                        interval={data.interval}
                         timezone={userTimezone}
                     />
                 </div>
