@@ -1172,6 +1172,90 @@ export class AnalyticsEngineAPI {
         return returnPromise;
     }
 
+    /**
+     * Get total user count grouped by time interval.
+     * Uses argMax to get the latest reported value per bucket, then forward-fills
+     * gaps with the last known value (since total users is a cumulative metric).
+     */
+    async getTotalUsersGroupedByInterval(
+        siteId: string,
+        intervalType: "DAY" | "HOUR",
+        startDateTime: Date,
+        endDateTime: Date,
+        tz?: string,
+    ): Promise<[string, number][]> {
+        const resolvedTz = tz || "UTC";
+        const localStartTime = dayjs(startDateTime).tz(resolvedTz).utc();
+        const localEndTime = dayjs(endDateTime).tz(resolvedTz).utc();
+
+        const query = `
+            SELECT
+                toStartOfInterval(timestamp, INTERVAL '1' ${intervalType}, '${resolvedTz}') as _bucket,
+                toDateTime(_bucket, 'Etc/UTC') as bucket,
+                argMax(${ColumnMappings.customProp1}, timestamp) as totalUsers
+            FROM metricsDataset
+            WHERE timestamp >= toDateTime('${localStartTime.format("YYYY-MM-DD HH:mm:ss")}')
+                AND timestamp < toDateTime('${localEndTime.format("YYYY-MM-DD HH:mm:ss")}')
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.eventName} = 'total_user'
+            GROUP BY _bucket
+            ORDER BY _bucket ASC`;
+
+        type SelectionSet = {
+            bucket: string;
+            totalUsers: string; // stored as blob18, returns as string
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<[string, number][]>(
+            (resolve, reject) =>
+                (async () => {
+                    const response = await queryResult;
+
+                    if (!response.ok) {
+                        reject(response.statusText);
+                        return;
+                    }
+
+                    const responseData =
+                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                    // Build a lookup of bucket key -> totalUsers value
+                    const resultMap = new Map<string, number>();
+                    responseData.data.forEach((row) => {
+                        const key = dayjs(new Date(row["bucket"])).format(
+                            "YYYY-MM-DD HH:mm:ss",
+                        );
+                        resultMap.set(key, Number(row.totalUsers) || 0);
+                    });
+
+                    // Generate all expected time buckets
+                    const initialRows = generateEmptyRowsOverInterval(
+                        intervalType,
+                        startDateTime,
+                        endDateTime,
+                        resolvedTz,
+                    );
+
+                    // Merge sparse results into all buckets and forward-fill gaps
+                    // (total users is cumulative, so last known value carries forward)
+                    const result: [string, number][] = [];
+                    let lastKnownValue = 0;
+                    Object.keys(initialRows)
+                        .sort()
+                        .forEach((key) => {
+                            if (resultMap.has(key)) {
+                                lastKnownValue = resultMap.get(key)!;
+                            }
+                            result.push([key, lastKnownValue]);
+                        });
+
+                    resolve(result);
+                })(),
+        );
+        return returnPromise;
+    }
+
     async getLatestEventPropValue(
         siteId: string,
         eventName: string,

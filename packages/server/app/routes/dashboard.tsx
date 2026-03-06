@@ -47,6 +47,7 @@ import {
 import { SearchFilters } from "~/lib/types";
 import SearchFilterBadges from "~/components/SearchFilterBadges";
 import { TimeSeriesCard } from "./resources.timeseries";
+import { TotalUsersTimeSeriesCard } from "./resources.total-users-timeseries";
 import { StatsCard } from "./resources.stats";
 import { TotalUsersCard } from "./resources.total-users";
 import { ActiveUsersCard } from "./resources.active-users";
@@ -253,6 +254,13 @@ export default function Dashboard() {
                         siteId={data.siteId}
                         interval={data.interval}
                         filters={data.filters}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="w-full mb-4">
+                    <TotalUsersTimeSeriesCard
+                        siteId={data.siteId}
+                        interval={data.interval}
                         timezone={userTimezone}
                     />
                 </div>
