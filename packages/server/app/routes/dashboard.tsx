@@ -37,6 +37,7 @@ import { UtmCampaignCard } from "./resources.utm-campaign";
 import { UtmTermCard } from "./resources.utm-term";
 import { UtmContentCard } from "./resources.utm-content";
 import { EventsCard } from "./resources.events";
+import { EventsTimeSeriesCard } from "./resources.events-timeseries";
 import { EventPropsCard } from "./resources.event-props";
 
 import {
@@ -269,6 +270,14 @@ export default function Dashboard() {
                     <TotalUsersTimeSeriesCard
                         siteId={data.siteId}
                         interval={data.interval}
+                        timezone={userTimezone}
+                    />
+                </div>
+                <div className="w-full mb-4">
+                    <EventsTimeSeriesCard
+                        siteId={data.siteId}
+                        interval={data.interval}
+                        filters={data.filters}
                         timezone={userTimezone}
                     />
                 </div>

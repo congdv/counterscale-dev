@@ -1256,6 +1256,87 @@ export class AnalyticsEngineAPI {
         return returnPromise;
     }
 
+    async getEventsGroupedByInterval(
+        siteId: string,
+        intervalType: "DAY" | "HOUR",
+        startDateTime: Date,
+        endDateTime: Date,
+        tz?: string,
+        filters: SearchFilters = {},
+    ): Promise<[string, Record<string, number>][]> {
+        const resolvedTz = tz || "UTC";
+        const localStartTime = dayjs(startDateTime).tz(resolvedTz).utc();
+        const localEndTime = dayjs(endDateTime).tz(resolvedTz).utc();
+
+        const filterStr = filtersToSql(filters);
+
+        const query = `
+            SELECT
+                toStartOfInterval(timestamp, INTERVAL '1' ${intervalType}, '${resolvedTz}') as _bucket,
+                toDateTime(_bucket, 'Etc/UTC') as bucket,
+                ${ColumnMappings.eventName} as eventName,
+                SUM(_sample_interval) as count
+            FROM metricsDataset
+            WHERE timestamp >= toDateTime('${localStartTime.format("YYYY-MM-DD HH:mm:ss")}')
+                AND timestamp < toDateTime('${localEndTime.format("YYYY-MM-DD HH:mm:ss")}')
+                AND ${ColumnMappings.siteId} = '${siteId}'
+                AND ${ColumnMappings.eventName} != ''
+                AND ${ColumnMappings.eventName} != 'total_user'
+                ${filterStr}
+            GROUP BY _bucket, eventName
+            ORDER BY _bucket ASC`;
+
+        type SelectionSet = {
+            bucket: string;
+            eventName: string;
+            count: number;
+        };
+
+        const queryResult = this.query(query);
+        const returnPromise = new Promise<[string, Record<string, number>][]>(
+            (resolve, reject) =>
+                (async () => {
+                    const response = await queryResult;
+
+                    if (!response.ok) {
+                        reject(response.statusText);
+                        return;
+                    }
+
+                    const responseData =
+                        (await response.json()) as AnalyticsQueryResult<SelectionSet>;
+
+                    // bucket key -> { eventName -> count }
+                    const resultMap = new Map<string, Record<string, number>>();
+                    responseData.data.forEach((row) => {
+                        const key = dayjs(new Date(row["bucket"])).format(
+                            "YYYY-MM-DD HH:mm:ss",
+                        );
+                        if (!resultMap.has(key)) {
+                            resultMap.set(key, {});
+                        }
+                        resultMap.get(key)![row.eventName] =
+                            Number(row.count) || 0;
+                    });
+
+                    const initialRows = generateEmptyRowsOverInterval(
+                        intervalType,
+                        startDateTime,
+                        endDateTime,
+                        resolvedTz,
+                    );
+
+                    const result: [string, Record<string, number>][] =
+                        Object.keys(initialRows)
+                            .sort()
+                            .map((key) => [key, resultMap.get(key) ?? {}]);
+
+                    resolve(result);
+                })(),
+        );
+        return returnPromise;
+    }
+
     async getLatestEventPropValue(
         siteId: string,
         eventName: string,
